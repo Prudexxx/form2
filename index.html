@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <title>Создание договора</title>
-  <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <h1>Форма для создания договора</h1>
 <form id="contractForm">
-  <!-- поля, как раньше -->
+  <!-- поля формы -->
   <label>
     <p> Наименование услуги:</p>
     <input type="text" id="serviceName" placeholder="Наименование" required>
@@ -45,31 +44,14 @@
     <p>Телефон заказчика:</p>
     <input type="tel" id="customerPhone" placeholder="8-900-00-00" required>
   </label><br><br>
-  <!-- Кнопки -->
-  <button type="button" onclick="generateAndDownload()">Создать договор (скачать)</button>
-  <button type="button" onclick="generateAndPreview()">Предварительный просмотр</button>
+  <!-- кнопки -->
+  <button type="button" onclick="downloadPdf()">Создать договор (скачать)</button>
+  <button type="button" onclick="previewPdf()">Предварительный просмотр</button>
 </form>
 
-<!-- Область для предварительного просмотра -->
-<h2>Предварительный просмотр</h2>
-<div id="previewContainer" style="border:1px solid #ccc; padding:10px; max-height:300px; overflow:auto;"></div>
+<div id="pdfPreview" style="margin-top:20px; border:1px solid #ccc; padding:10px; max-height:400px; overflow:auto;"></div>
 
 <script>
-function generateAndDownload() {
-  const data = getFormData();
-  if (!data) return;
-  const htmlContent = buildHtmlContent(data);
-  const blob = htmlDocx.asBlob(htmlContent);
-  saveAs(blob, `Акт_${data.formattedDate}.docx`);
-}
-
-function generateAndPreview() {
-  const data = getFormData();
-  if (!data) return;
-  const htmlContent = buildHtmlContent(data);
-  document.getElementById('previewContainer').innerHTML = htmlContent;
-}
-
 function getFormData() {
   const serviceName = document.getElementById('serviceName').value.trim();
   const dateInput = document.getElementById('date').value;
@@ -141,22 +123,7 @@ function buildHtmlContent(data) {
 </tr>
 </table>
 
-<table style="width:100%; border-collapse: collapse; margin-top:10px;" border="0" cellpadding="5" cellspacing="0">
-<tr>
-  <td style="width:50%;"></td>
-  <td style="width:50%; text-align:right;">Сумма с учетом скидки при предоставлении карты №  ____  5%</td>
-</tr>
-<tr>
-  <td style="width:50%;"></td>
-  <td style="width:50%; text-align:right;">Итого: <u> ${data.amount} </u></td>
-</tr>
-<tr>
-  <td style="width:50%;"></td>
-  <td style="width:50%; text-align:right;">Без НДС  <u> ${data.amount} </u></td>
-</tr>
-</table>
-
-<p>Всего оказано услуг на сумму: <u> ${data.amount} </u> руб.</p>
+<p>Всего оказано услуг на сумму: <u>${data.amount}</u> руб.</p>
 <p>Вышеперечисленные услуги выполнены полностью и в срок. Заказчик претензий по объему, качеству и срокам оказания услуг не имеет.</p>
 
 <p>ВОДИТЕЛЬ ____________________________</p>
@@ -172,7 +139,34 @@ function buildHtmlContent(data) {
 `;
 }
 
-// Можно добавить автоматический вызов при загрузке, если нужно
+function downloadPdf() {
+  const data = getFormData();
+  if (!data) return;
+  const content = buildHtmlContent(data);
+  const element = document.createElement('div');
+  element.innerHTML = content;
+  html2pdf().from(element).save(`Акт_${data.formattedDate}.pdf`);
+}
+
+function previewPdf() {
+  const data = getFormData();
+  if (!data) return;
+  const content = buildHtmlContent(data);
+  const container = document.getElementById('pdfPreview');
+  container.innerHTML = '';
+  const element = document.createElement('div');
+  element.innerHTML = content;
+  html2pdf().from(element).outputPdf().then(function(pdfBlob) {
+    const url = URL.createObjectURL(pdfBlob);
+    // Встроенный просмотр PDF
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.width = '100%';
+    iframe.style.height = '400px';
+    container.innerHTML = '';
+    container.appendChild(iframe);
+  });
+}
 </script>
 </body>
 </html>
